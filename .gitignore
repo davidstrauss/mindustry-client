@@ -159,6 +159,13 @@ nb-configuration.xml
 .gradle/
 gradle-app.setting
 
+# Catch-all for build artifacts in any module (current or future).
+build/
+out/
+dist/
+bin/
+*.class
+
 ## OS Specific
 .DS_Store
 Thumbs.db
