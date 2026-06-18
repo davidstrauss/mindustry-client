@@ -1,0 +1,47 @@
+app-id: io.github.mindustrytng.Client
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.openjdk21
+command: mindustry-tng
+
+finish-args:
+  # Native Wayland preferred; fall back to X11 automatically if unavailable.
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+  - --socket=pulseaudio
+  # Multiplayer + server browser + the client's update/comms features.
+  - --share=network
+
+modules:
+  # Bundle a JRE from the OpenJDK 21 SDK extension into /app/jre.
+  - name: openjdk
+    buildsystem: simple
+    build-commands:
+      - /usr/lib/sdk/openjdk21/install.sh
+
+  - name: mindustry-tng
+    buildsystem: simple
+    build-commands:
+      # Game jar (built in the JDK-17 devcontainer: ./gradlew desktop:dist).
+      - install -Dm644 Mindustry.jar /app/bin/Mindustry.jar
+      # Launcher (runs the jar with the bundled JRE).
+      - install -Dm755 mindustry-tng.sh /app/bin/mindustry-tng
+      # Desktop integration.
+      - install -Dm644 io.github.mindustrytng.Client.desktop /app/share/applications/io.github.mindustrytng.Client.desktop
+      - install -Dm644 io.github.mindustrytng.Client.metainfo.xml /app/share/metainfo/io.github.mindustrytng.Client.metainfo.xml
+      - install -Dm644 icon_64.png /app/share/icons/hicolor/64x64/apps/io.github.mindustrytng.Client.png
+    sources:
+      - type: file
+        path: ../desktop/build/libs/Mindustry.jar
+      - type: file
+        path: mindustry-tng.sh
+      - type: file
+        path: io.github.mindustrytng.Client.desktop
+      - type: file
+        path: io.github.mindustrytng.Client.metainfo.xml
+      - type: file
+        path: ../core/assets/icons/icon_64.png

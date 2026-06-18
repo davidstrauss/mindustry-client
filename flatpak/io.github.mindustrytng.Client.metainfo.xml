@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.mindustrytng.Client</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Mindustry TNG</name>
+  <summary>Custom Mindustry client with algorithmic build automation</summary>
+  <description>
+    <p>
+      A custom Mindustry client based on Foo's client (mindustry-antigrief) v8,
+      extended with algorithmic build automation: optimal mining, core-adjacent
+      processing and unit-building, and turret defense layout.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.mindustrytng.Client.desktop</launchable>
+  <categories>
+    <category>Game</category>
+    <category>StrategyGame</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-06-18">
+      <description>
+        <p>Initial custom build: dev environment, Flatpak packaging, automation scaffold.</p>
+      </description>
+    </release>
+  </releases>
+</component>

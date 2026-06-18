@@ -16,6 +16,7 @@ import mindustry.client.crypto.*
 import mindustry.client.navigation.*
 import mindustry.client.navigation.Navigation.getAllyTree
 import mindustry.client.navigation.Navigation.getTree
+import mindustry.client.tng.*
 import mindustry.client.utils.*
 import mindustry.content.*
 import mindustry.game.*
@@ -47,6 +48,7 @@ object Client {
     fun initialize() {
         mainExecutor.execute(::setupCommands)
         AutoTransfer.init()
+        AutoBuild.init()
         ClientLogic()
         Server // Force the init block to be run
         CustomMode // Force the init block to be run
@@ -65,6 +67,7 @@ object Client {
 
     fun update() {
         autoTransfer.update()
+        AutoBuild.update()
         Seer.update()
         Navigation.update()
         PowerInfo.update()
