@@ -4,22 +4,6 @@ A custom Mindustry client based on **Foo's client** (`mindustry-antigrief/mindus
 extended with **algorithmic build automation** (optimal mining, core-adjacent processing/unit-building,
 turret defense layout).
 
-## Repository model
-
-This repo was seeded from Foo's client. The original remote is kept as `upstream`:
-
-```bash
-git remote -v
-# upstream  https://github.com/mindustry-antigrief/mindustry-client.git
-```
-
-Add your own fork as `origin` to push your work, and pull client updates from `upstream`:
-
-```bash
-git remote add origin <your-fork-url>
-git fetch upstream && git merge upstream/v8   # pull in client updates
-```
-
 > Build requires **JDK 17 exactly** — `settings.gradle` aborts on anything else.
 > The devcontainer ships the right JDK, so use it.
 
@@ -44,19 +28,16 @@ devcontainer up --docker-path podman --workspace-folder .
 devcontainer exec --docker-path podman --workspace-folder . bash
 ```
 
-### GUI — native Wayland (preferred)
+### GUI — X11 via XWayland
 
-The container mounts your `XDG_RUNTIME_DIR` (Wayland + audio sockets) and `/dev/dri`, and defaults to
-`SDL_VIDEODRIVER=wayland` (Arc's desktop backend is SDL2). The whole runtime dir is mounted so the
-Wayland socket keeps the ownership/permissions SDL requires (`--userns=keep-id` aligns uids).
+Arc's desktop backend is SDL2, and **the bundled `libSDL2.so` is compiled without the Wayland video
+driver** (only `x11` and `dummy`). So even though the host is GNOME/Wayland, the game renders through
+XWayland: the container defaults to `SDL_VIDEODRIVER=x11`, mounts the X11 socket (`/tmp/.X11-unix`),
+and passes `DISPLAY`/`XAUTHORITY` through. `--userns=keep-id` aligns uids so the sockets are usable.
 
-If a window fails to open, fall back to XWayland by overriding the driver for one run:
-
-```bash
-SDL_VIDEODRIVER=x11 ./gradlew desktop:run
-```
-
-(The X11 socket is mounted and `DISPLAY`/`XAUTHORITY` are passed through for exactly this fallback.)
+> Don't set `SDL_VIDEODRIVER=wayland` — it fails with `SdlError: wayland not available` because that
+> driver isn't in the bundled SDL. (The whole `XDG_RUNTIME_DIR` is still mounted, but only for the
+> PipeWire/Pulse audio socket.)
 
 ## Build / run / test
 

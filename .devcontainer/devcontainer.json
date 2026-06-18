@@ -13,10 +13,12 @@
     "--device=/dev/dri"
   ],
 
-  // --- GUI passthrough: NATIVE WAYLAND preferred (host is GNOME/Wayland) ---
-  // Mounting the whole XDG_RUNTIME_DIR gives SDL2 the wayland-0 socket (with correct
-  // ownership) plus the PipeWire/Pulse audio socket. The X11 socket is also mounted
-  // so XWayland is available as a fallback: set SDL_VIDEODRIVER=x11 if native fails.
+  // --- GUI passthrough: X11 via XWayland (host is GNOME/Wayland) ---
+  // Arc's bundled libSDL2.so is compiled WITHOUT the Wayland video driver (only x11 +
+  // dummy), so SDL_VIDEODRIVER=wayland always fails with "wayland not available".
+  // We mount the X11 socket + pass DISPLAY/XAUTHORITY so the game renders via XWayland.
+  // The whole XDG_RUNTIME_DIR is still mounted for the PipeWire/Pulse audio socket
+  // (and keeps correct ownership under --userns=keep-id).
   "mounts": [
     "source=${localEnv:XDG_RUNTIME_DIR},target=/run/user/1000,type=bind",
     "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind",
@@ -24,7 +26,7 @@
   ],
 
   "containerEnv": {
-    "SDL_VIDEODRIVER": "wayland",
+    "SDL_VIDEODRIVER": "x11",
     "XDG_RUNTIME_DIR": "/run/user/1000",
     "WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}",
     "DISPLAY": "${localEnv:DISPLAY}",
