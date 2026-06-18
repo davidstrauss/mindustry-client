@@ -179,3 +179,9 @@ jdks/
 fooKotlinScriptSupport.jar
 # project files for the sectors
 core/assets-raw/sprites/ui/sectors/*.json
+
+# Mindustry TNG — Flatpak build artifacts
+/flatpak/build-dir/
+/flatpak/.flatpak-builder/
+/flatpak/Mindustry.jar
+/flatpak/*.flatpak

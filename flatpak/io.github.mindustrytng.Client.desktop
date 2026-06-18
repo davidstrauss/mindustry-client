@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Mindustry TNG
+Comment=Custom Mindustry client (Foo's client v8) with algorithmic build automation
+Exec=mindustry-tng
+Icon=io.github.mindustrytng.Client
+Terminal=false
+Categories=Game;StrategyGame;
+Keywords=mindustry;tower;defense;automation;rts;

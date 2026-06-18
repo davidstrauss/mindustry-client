@@ -1,0 +1,54 @@
+{
+  "name": "mindustry-tng (Foo's client v8, JDK 17)",
+  "build": { "dockerfile": "Dockerfile" },
+
+  // --- Podman (rootless) on Fedora Atomic ---
+  // keep-id maps the container 'vscode' user (uid 1000) to your host uid so the
+  // bind-mounted workspace and the runtime dir (Wayland/audio sockets) keep the
+  // right ownership (Wayland requires XDG_RUNTIME_DIR be owned by you, mode 0700).
+  // label=disable is required because SELinux is enforcing on the host.
+  "runArgs": [
+    "--userns=keep-id",
+    "--security-opt=label=disable",
+    "--device=/dev/dri"
+  ],
+
+  // --- GUI passthrough: NATIVE WAYLAND preferred (host is GNOME/Wayland) ---
+  // Mounting the whole XDG_RUNTIME_DIR gives SDL2 the wayland-0 socket (with correct
+  // ownership) plus the PipeWire/Pulse audio socket. The X11 socket is also mounted
+  // so XWayland is available as a fallback: set SDL_VIDEODRIVER=x11 if native fails.
+  "mounts": [
+    "source=${localEnv:XDG_RUNTIME_DIR},target=/run/user/1000,type=bind",
+    "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind",
+    "source=mindustry-tng-gradle,target=/home/vscode/.gradle,type=volume"
+  ],
+
+  "containerEnv": {
+    "SDL_VIDEODRIVER": "wayland",
+    "XDG_RUNTIME_DIR": "/run/user/1000",
+    "WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}",
+    "DISPLAY": "${localEnv:DISPLAY}",
+    "XAUTHORITY": "${localEnv:XAUTHORITY}",
+    "_JAVA_AWT_WM_NONREPARENTING": "1"
+  },
+
+  // Gradle volume is created root-owned; hand it to vscode, and confirm the toolchain.
+  "postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/.gradle && chmod +x ./gradlew && ./gradlew --version",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "fwcd.kotlin",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "java.configuration.runtimes": [
+          { "name": "JavaSE-17", "path": "/usr/lib/jvm/msopenjdk-current", "default": true }
+        ]
+      }
+    }
+  },
+
+  "remoteUser": "vscode"
+}
