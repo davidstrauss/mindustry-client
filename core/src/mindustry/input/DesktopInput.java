@@ -1003,13 +1003,20 @@ public class DesktopInput extends InputHandler{
 
         if(!Core.scene.hasKeyboard() && selectX == -1 && selectY == -1 && schemX != -1 && schemY != -1){
             if(Core.input.keyRelease(Binding.schematicSelect)){
-                lastSchematic = schematics.create(schemX, schemY, rawCursorX, rawCursorY);
-                useSchematic(lastSchematic);
-                if(selectPlans.isEmpty()){
-                    lastSchematic = null;
+                //TNG: if the algorithmic mining tool is armed (via !mine), feed it this
+                //selection instead of capturing a schematic.
+                if(mindustry.client.tng.MiningPlanner.INSTANCE.consumeSelection(schemX, schemY, rawCursorX, rawCursorY)){
+                    schemX = -1;
+                    schemY = -1;
+                }else{
+                    lastSchematic = schematics.create(schemX, schemY, rawCursorX, rawCursorY);
+                    useSchematic(lastSchematic);
+                    if(selectPlans.isEmpty()){
+                        lastSchematic = null;
+                    }
+                    schemX = -1;
+                    schemY = -1;
                 }
-                schemX = -1;
-                schemY = -1;
             }else if(input.keyRelease(Binding.rebuildSelect)){
 
                 rebuildArea(schemX, schemY, rawCursorX, rawCursorY);
