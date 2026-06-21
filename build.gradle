@@ -547,10 +547,37 @@ project(":tools"){
 
 configure(project(":annotations")){
     apply plugin: "kotlin"
+    apply plugin: "eclipse"   // IDE classpath customization only — never runs in the real build
 
     tasks.withType(JavaCompile){
         targetCompatibility = 17
         sourceCompatibility = 17
+    }
+
+    // This processor legitimately references JDK-internal compiler APIs (com.sun.tools.javac.*,
+    // sun.reflect.annotation). The real Gradle build reaches them via the --add-opens JVM args set
+    // on every JavaCompile, and this module must stay target 8 (:core consumes it as a JVM-8
+    // variant), so we can't pass compile-time --add-exports. The VS Code Java language server
+    // (redhat.java/Buildship), however, compiles annotations with JDT and—without module access—
+    // flags "package not accessible" on every reference, which cascades into "Unresolved
+    // dependency: project annotations" downstream (hundreds of phantom problems). Buildship honors
+    // this eclipse `whenMerged` hook when it builds its classpath model, so we grant JDT the module
+    // access here. This only edits the IDE's generated .classpath; it never touches compileJava.
+    eclipse.classpath.file.whenMerged {
+        def exports = [
+            "jdk.compiler/com.sun.tools.javac.api",
+            "jdk.compiler/com.sun.tools.javac.code",
+            "jdk.compiler/com.sun.tools.javac.model",
+            "jdk.compiler/com.sun.tools.javac.processing",
+            "jdk.compiler/com.sun.tools.javac.parser",
+            "jdk.compiler/com.sun.tools.javac.util",
+            "jdk.compiler/com.sun.tools.javac.tree",
+            "java.base/sun.reflect.annotation",
+        ].collect { it + "=ALL-UNNAMED" }.join(":")
+        entries.findAll { it.kind == "con" && it.path.contains("JRE_CONTAINER") }.each {
+            it.entryAttributes["module"] = "true"
+            it.entryAttributes["add-exports"] = exports
+        }
     }
 
     dependencies{
