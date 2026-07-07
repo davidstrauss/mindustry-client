@@ -117,6 +117,30 @@ public class FactoryArrayGeneratorTests{
     }
 
     @Test
+    void buildsTwoStageChainForSurgeAlloy(){
+        // surge smelter consumes 3 silicon / 75 ticks => 2.4 silicon/s per smelter; silicon smelter = 1.5/s.
+        // copper/lead/titanium are raw (no crafter) => external, no feeder. Silicon is the one crafted input.
+        GenResult res = gen.generate(req("surge-alloy", 24, 20, 0f));
+        assertTrue(res.ok, res.message);
+        Schematic s = res.schematic;
+
+        int surge = count(s, Blocks.surgeSmelter);
+        int silicon = count(s, Blocks.siliconSmelter);
+        assertTrue(surge >= 1, "surge smelters placed");
+        assertTrue(silicon >= 1, "silicon feeder stage placed (silicon is a crafted input)");
+        assertEquals((int)Math.ceil(surge * 2.4 / 1.5), silicon, "silicon feeder sized to surge demand");
+
+        // whole chain fits the area, no overlaps between stages
+        IntSet occ = new IntSet();
+        for(Stile t : s.tiles){
+            assertTrue(t.x + t.block.size <= s.width && t.y + t.block.size <= s.height, "in bounds: " + t.block.name);
+            for(int dx = 0; dx < t.block.size; dx++) for(int dy = 0; dy < t.block.size; dy++)
+                assertTrue(occ.add(Point2.pack(t.x + dx, t.y + dy)), "stage overlap at " + (t.x+dx) + "," + (t.y+dy));
+        }
+        assertTrue(s.width <= 24 && s.height <= 20, "chain fits the selected area");
+    }
+
+    @Test
     void generalizesBeyondSilicon(){
         // metaglass is produced by the kiln (2x2), proving the generator keys off content, not silicon.
         GenResult res = gen.generate(req("metaglass", 12, 8, 0f));
