@@ -66,16 +66,39 @@ public class FactoryArrayGeneratorTests{
     }
 
     @Test
-    void inputRowAtBottomOutputAboveSmelter(){
+    void inputRowBelowSharedOutputLaneAbove(){
         Schematic s = gen.generate(req("silicon", 12, 8, 0f)).schematic;
-        // smelters sit at y=1 (one input belt row at y=0 beneath them)
+        // smelters sit at y=1 (one input belt row at y=0 beneath them); shared output lane at y=3
         for(Stile t : s.tiles){
             if(t.block == Blocks.siliconSmelter) assertEquals(1, t.y, "smelter row directly above the input belt row");
         }
-        // there is a full input belt row along y=0 under the smelter columns
-        int bottomBelts = 0;
-        for(Stile t : s.tiles) if(t.block == Blocks.conveyor && t.y == 0) bottomBelts++;
+        int bottomBelts = 0, laneBelts = 0;
+        for(Stile t : s.tiles){
+            if(t.block == Blocks.conveyor && t.y == 0) bottomBelts++;
+            // output lane spans the full width at y = smelterY(1) + size(2) = 3, flowing right (rot 0)
+            if(t.y == 3 && (t.block == Blocks.conveyor || t.block == Blocks.titaniumConveyor || t.block == Blocks.armoredConveyor)){
+                laneBelts++;
+                assertEquals(0, t.rotation, "output lane flows to the exit edge (+x)");
+            }
+        }
         assertEquals(8, bottomBelts, "2 input belts under each of 4 smelters");
+        assertEquals(s.width, laneBelts, "one continuous output lane across the full width");
+        // schematic is compact: input(1) + smelter(2) + lane(1) = 4 tall regardless of a taller selection
+        assertEquals(4, s.height, "compact single-row footprint");
+    }
+
+    @Test
+    void outputBeltTierScalesWithLoad(){
+        // basic belt 6.5/s carries 4 smelters (6/s); titanium 10/s carries 6 (9/s); armored 11/s carries 7 (10.5/s).
+        assertEquals(Blocks.conveyor, laneBlock(gen.generate(req("silicon", 12, 8, 0f)).schematic), "4 smelters fit a basic belt");
+        assertEquals(Blocks.titaniumConveyor, laneBlock(gen.generate(req("silicon", 18, 8, 0f)).schematic), "6 smelters need titanium");
+        assertEquals(Blocks.armoredConveyor, laneBlock(gen.generate(req("silicon", 21, 8, 0f)).schematic), "7 smelters need armored");
+    }
+
+    /** The block used by the output lane (y=3). */
+    mindustry.world.Block laneBlock(Schematic s){
+        for(Stile t : s.tiles) if(t.y == 3) return t.block;
+        return null;
     }
 
     @Test
