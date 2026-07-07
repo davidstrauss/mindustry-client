@@ -10,8 +10,8 @@ import mindustry.entities.units.BuildPlan
 import mindustry.client.tng.gen.GenResult
 import mindustry.client.tng.gen.IntRect
 import mindustry.client.tng.gen.PowerMode
+import mindustry.client.tng.gen.FactoryArrayGenerator
 import mindustry.client.tng.gen.SchematicGenerator
-import mindustry.client.tng.gen.StubGenerator
 import mindustry.gen.Player
 import kotlin.math.abs
 
@@ -48,7 +48,7 @@ object MakeController {
 
     private var state = State.idle
     private var pending: GenRequest? = null
-    private val generator: SchematicGenerator = StubGenerator()
+    private val generator: SchematicGenerator = FactoryArrayGenerator()
 
     /** @return the current state's name; for tests/telemetry. */
     fun stateName(): String = state.name

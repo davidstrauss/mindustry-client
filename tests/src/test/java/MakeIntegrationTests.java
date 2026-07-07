@@ -81,20 +81,18 @@ public class MakeIntegrationTests{
         // Synthetic F-drag: DesktopInput passes inclusive tile endpoints (schemX,schemY, rawCursorX,rawCursorY).
         // planSelection is the pure production seam (same code consumeSelection runs off-thread), so what
         // we assert here is exactly what gets handed to the unit's build queue in-game.
-        Seq<BuildPlan> plans = MakeController.INSTANCE.planSelection(10, 10, 14, 13); // 5x4 area
-        assertEquals(20, plans.size, "the 5x4 area is fully placed (stub fills the area)");
+        Seq<BuildPlan> plans = MakeController.INSTANCE.planSelection(10, 20, 21, 27); // 12x8 area at origin (10,20)
         assertEquals(0, p.unit().plans().size, "planning must not mutate the build queue");
 
-        // Every tile in [10..14]x[10..13] is covered exactly once, anchored at the selected origin.
-        IntSet seen = new IntSet();
+        int smelters = 0;
         for(BuildPlan bp : plans){
             assertNotNull(bp.block, "plan has a block");
             assertFalse(bp.breaking, "make must not break anything");
-            assertTrue(bp.x >= 10 && bp.x <= 14 && bp.y >= 10 && bp.y <= 13,
-                "plan within the selected area, got " + bp.x + "," + bp.y);
-            assertTrue(seen.add(Point2.pack(bp.x, bp.y)), "no duplicate plan at " + bp.x + "," + bp.y);
+            assertTrue(bp.x >= 10 && bp.x + bp.block.size <= 22 && bp.y >= 20 && bp.y + bp.block.size <= 28,
+                "plan footprint within the selected area, got " + bp.x + "," + bp.y + " (" + bp.block.name + ")");
+            if(bp.block == Blocks.siliconSmelter) smelters++;
         }
-        assertEquals(20, seen.size, "exactly the 20 area tiles are covered");
+        assertEquals(4, smelters, "a 12-wide silicon array places 4 smelters, anchored at the selected origin");
     }
 
     @Test
