@@ -1,3 +1,5 @@
+package test;
+
 import arc.struct.*;
 import mindustry.*;
 import mindustry.client.tng.*;

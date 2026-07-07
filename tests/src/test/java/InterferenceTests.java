@@ -1,3 +1,5 @@
+package test;
+
 import arc.math.geom.*;
 import arc.struct.*;
 import mindustry.client.tng.*;
