@@ -17,6 +17,7 @@ import mindustry.client.antigrief.*
 import mindustry.client.communication.*
 import mindustry.client.communication.Packets
 import mindustry.client.navigation.*
+import mindustry.client.tng.make.*
 import mindustry.client.navigation.Navigation.follow
 import mindustry.client.navigation.Navigation.navigator
 import mindustry.client.ui.*
@@ -76,6 +77,10 @@ fun setupCommands() {
             }
         }
         player.sendMessage(result)
+    }
+
+    register("make <target> [args...]", "Generate a factory for <target> and hand it to the paste buffer. Usage: !make <item|unit:name> [rate] [flags], then drag-select the build area with schematic-select (default F). See !make help.") { args, player ->
+        MakeController.handleMake(args, player)
     }
 
     register("unit-old <unit-type>", Core.bundle.get("client.command.unit.description")) { args, _ ->

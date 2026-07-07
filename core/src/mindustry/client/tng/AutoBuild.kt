@@ -110,14 +110,16 @@ object AutoBuild {
             }
         }
 
-        clientCommandHandler.register(
-            "mine",
-            "[args...]",
-            "Arm the TNG mining tool, then drag-select an area. Optional args (any order): an ore " +
-                "name to mine only that ore, and a drill name/tier to cap the best drill used."
-        ) { args, player: Player ->
-            player.sendMessage(MiningPlanner.arm(args.getOrNull(0)))
-        }
+        // !mine is retired: the schematic-select drag now feeds the !make tool (MakeController),
+        // not MiningPlanner. The MiningPlanner engine + its unit tests are kept for reuse when the
+        // miner is redeveloped on top of the new SchematicGenerator boundary. See RECON.md.
+        // clientCommandHandler.register(
+        //     "mine",
+        //     "[args...]",
+        //     "Arm the TNG mining tool, then drag-select an area. ..."
+        // ) { args, player: Player ->
+        //     player.sendMessage(MiningPlanner.arm(args.getOrNull(0)))
+        // }
     }
 }
 

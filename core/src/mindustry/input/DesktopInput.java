@@ -1010,9 +1010,9 @@ public class DesktopInput extends InputHandler{
 
         if(!Core.scene.hasKeyboard() && selectX == -1 && selectY == -1 && schemX != -1 && schemY != -1){
             if(Core.input.keyRelease(Binding.schematicSelect)){
-                //TNG: if the algorithmic mining tool is armed (via !mine), feed it this
-                //selection instead of capturing a schematic.
-                if(mindustry.client.tng.MiningPlanner.INSTANCE.consumeSelection(schemX, schemY, rawCursorX, rawCursorY)){
+                //TNG: if !make is armed (awaitingArea), consume this drag as the build area
+                //instead of capturing a schematic.
+                if(mindustry.client.tng.make.MakeController.INSTANCE.consumeSelection(schemX, schemY, rawCursorX, rawCursorY)){
                     schemX = -1;
                     schemY = -1;
                 }else{
