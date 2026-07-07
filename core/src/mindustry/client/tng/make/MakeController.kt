@@ -1,10 +1,12 @@
 package mindustry.client.tng.make
 
 import arc.Core
+import arc.struct.Seq
 import arc.util.Log
 import arc.util.Threads
 import mindustry.Vars
 import mindustry.client.tng.gen.GenRequest
+import mindustry.entities.units.BuildPlan
 import mindustry.client.tng.gen.GenResult
 import mindustry.client.tng.gen.IntRect
 import mindustry.client.tng.gen.PowerMode
@@ -103,38 +105,71 @@ object MakeController {
         req.areaX = area.x; req.areaY = area.y; req.areaW = area.w; req.areaH = area.h
         // coreSide auto-detect is Task F; leave whatever --core set (null = auto/none for now).
 
-        // Snapshot: the camera may move freely during generation; anchor stays on the captured tiles.
+        // Snapshot: the player may move the camera freely during generation; the layout anchors to the
+        // captured tiles, not the live cursor. Generation is pure/heavy -> off the render thread.
         val snapshot = req
         state = State.generating
         Threads.daemon("tng-make-gen") {
-            val result = try {
-                generator.generate(snapshot)
-            } catch (e: Throwable) {
-                Log.err("[TNG] make generation failed", e)
-                GenResult.fail("generation error: ${e.message}")
-            }
-            Core.app.post { onGenerated(result) }
+            val plans = computePlans(snapshot)
+            Core.app.post { place(snapshot, plans) }
         }
         return true
     }
 
-    /** Main-thread continuation after generation. */
-    private fun onGenerated(r: GenResult) {
+    /**
+     * Plan (but do not place) the layout for the currently armed request over a drag rectangle:
+     * normalize, generate, and position the schematic's plans at the captured bottom-left origin.
+     * Mirrors [mindustry.client.tng.MiningPlanner]'s planSelection -- pure (no threading, no queue
+     * insertion, no state change beyond recording the area) so it is the headless-testable seam.
+     * @return positioned build plans, or empty if unarmed / area too small / generation failed.
+     */
+    fun planSelection(x1: Int, y1: Int, x2: Int, y2: Int): Seq<BuildPlan> {
+        val req = pending ?: return Seq<BuildPlan>()
+        val area = normalizeArea(x1, y1, x2, y2)
+        if (area.w < MIN_SIZE || area.h < MIN_SIZE) return Seq<BuildPlan>()
+        req.areaX = area.x; req.areaY = area.y; req.areaW = area.w; req.areaH = area.h
+        return computePlans(req)
+    }
+
+    /** Generate and map to build plans anchored at the request's bottom-left origin; empty on failure. */
+    private fun computePlans(req: GenRequest): Seq<BuildPlan> {
+        val r = generateSafe(req)
+        if (!r.ok || r.schematic == null) return Seq<BuildPlan>()
+        val schem = r.schematic!!
+        // toPlans centers on the tile, so pass the area centre to anchor bottom-left at the origin.
+        // Reuse the engine's own schematic->plan mapping so placement can't drift from the game.
+        return Vars.schematics.toPlans(schem, req.areaX + schem.width / 2, req.areaY + schem.height / 2)
+    }
+
+    private fun generateSafe(req: GenRequest): GenResult =
+        try {
+            generator.generate(req)
+        } catch (e: Throwable) {
+            Log.err("[TNG] make generation failed", e)
+            GenResult.fail("generation error: ${e.message}")
+        }
+
+    /**
+     * Main-thread placement: drop the plans directly into the player's build queue at the captured
+     * origin -- no cursor tracking. Uses the engine's Unit.addBuild (which also maintains the client
+     * plan index), so the unit builds them like any plan; toggle unit building off to review first.
+     * A later mode can auto-confirm. Placement (unlike [planSelection]) is client-side by nature.
+     */
+    private fun place(req: GenRequest, plans: Seq<BuildPlan>) {
         if (state != State.generating) return // reset/cancelled while generating
-        if (!r.ok || r.schematic == null) {
-            local("[scarlet][TNG][] ${r.message ?: "generation failed"}")
+        if (plans.isEmpty) {
+            local("[scarlet][TNG][] could not generate a layout for ${req.target} in that area.")
             reset()
             return
         }
-        // Hand to the vanilla paste buffer; vanilla owns preview/move/rotate/confirm from here.
-        // Known limitation (RECON.md §4): the paste selection tracks the cursor; it cannot be pinned
-        // to a fixed origin. It appears at the release point and follows the mouse for nudge/confirm.
-        Vars.control.input.useSchematic(r.schematic)
-        local("[accent][TNG][] ${r.message} — move/rotate and click to place.")
+        val unit = Vars.player?.unit()
+        if (unit != null) for (p in plans) unit.addBuild(p)
+        local("[accent][TNG][] placed ${plans.size} blocks for ${req.target} at (${req.areaX},${req.areaY}). [lightgray](toggle unit building to review)[]")
         reset()
     }
 
-    private fun reset() {
+    /** Return to idle, discarding any armed request. Public so the command layer / tests can cancel. */
+    fun reset() {
         state = State.idle
         pending = null
     }
