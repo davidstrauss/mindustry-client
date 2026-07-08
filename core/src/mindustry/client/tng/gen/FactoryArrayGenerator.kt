@@ -1,5 +1,6 @@
 package mindustry.client.tng.gen
 
+import arc.math.geom.Point2
 import arc.struct.Seq
 import arc.struct.StringMap
 import mindustry.Vars
@@ -130,7 +131,14 @@ class FactoryArrayGenerator : SchematicGenerator {
             val sx = c * stride
             tiles.add(Stile(crafter, sx, smelterY, null, ROT_UP))
             for (dx in 0 until s) tiles.add(Stile(Blocks.conveyor, sx + dx, yOff, null, ROT_UP))
-            tiles.add(Stile(Blocks.powerNode, sx + s, smelterY, null, 0))
+            // Power node in the gap lane, with EXPLICIT relative links (a Point2[] config): to its own
+            // smelter (bottom-left, offset -s) and to the next node (offset +stride). Explicit links work
+            // in singleplayer AND multiplayer — auto-link is disabled on net clients — so the delivered
+            // array is internally powered end-to-end and the player only hooks one external source to it.
+            val links = ArrayList<Point2>()
+            links.add(Point2(-s, 0))                                  // -> this stage's smelter
+            if (c < stage.count - 1) links.add(Point2(stride, 0))     // -> next node in the row
+            tiles.add(Stile(Blocks.powerNode, sx + s, smelterY, links.toTypedArray(), 0))
         }
         for (x in 0 until usedW) tiles.add(Stile(outTier, x, laneY, null, ROT_RIGHT))
     }

@@ -117,6 +117,23 @@ public class FactoryArrayGeneratorTests{
     }
 
     @Test
+    void powerNodesCarryExplicitLinks(){
+        // Explicit Point2[] links make the array self-power in SP and MP (auto-link is off on net clients).
+        Schematic s = gen.generate(req("silicon", 12, 8, 0f)).schematic;
+        int nodes = 0;
+        for(Stile t : s.tiles){
+            if(t.block != Blocks.powerNode) continue;
+            nodes++;
+            assertTrue(t.config instanceof Point2[], "power node carries a Point2[] link config");
+            Point2[] links = (Point2[])t.config;
+            boolean toSmelter = false;
+            for(Point2 p : links) if(p.x == -2 && p.y == 0) toSmelter = true; // -size, to its 2x2 smelter
+            assertTrue(toSmelter, "node links to its own smelter (offset -2,0)");
+        }
+        assertEquals(4, nodes, "one node per smelter");
+    }
+
+    @Test
     void buildsTwoStageChainForSurgeAlloy(){
         // surge smelter consumes 3 silicon / 75 ticks => 2.4 silicon/s per smelter; silicon smelter = 1.5/s.
         // copper/lead/titanium are raw (no crafter) => external, no feeder. Silicon is the one crafted input.

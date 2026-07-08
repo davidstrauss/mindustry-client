@@ -69,28 +69,40 @@ public class MakeSimTests{
             }
         }
 
-        // Power: wire a source + all smelters into one PowerGraph directly (the power-test idiom), so this
-        // test isolates ITEM flow; whether the generator's power *nodes* auto-link in-game is tracked
-        // separately (pasted nodes have no link config).
-        Tile psrc = world.tile(ox - 2, oy);
-        psrc.setBlock(Blocks.powerSource, Team.sharded);
-        PowerGraph pg = new PowerGraph();
-        pg.add(psrc.build);
-        for(Stile t : s.tiles) if(t.block == Blocks.siliconSmelter) pg.add(world.tile(ox + t.x, oy + t.y).build);
+        // Apply the schematic configs (power-node links) exactly as an in-game paste would: the generated
+        // node links must wire the whole array into ONE power graph on their own.
+        for(Stile t : s.tiles){
+            if(t.config != null) world.tile(ox + t.x, oy + t.y).build.configureAny(t.config);
+        }
 
-        // Sink: a container just past the output lane's right end catches the silicon.
+        // Sink past the output lane, and an external source (the player's supply).
         int laneEndX = s.width - 1, laneY = 3;
         Tile sink = world.tile(ox + laneEndX + 1, oy + laneY);
         sink.setBlock(Blocks.container, Team.sharded);
+        Tile psrc = world.tile(ox - 2, oy);
+        psrc.setBlock(Blocks.powerSource, Team.sharded);
 
         for(Tile t : world.tiles) if(t.build != null && t.isCenter()) t.build.updateProximity();
+
+        // Every smelter must share ONE power graph purely via the generator's node links (proves the fix).
+        Stile firstNode = null;
+        for(Stile t : s.tiles) if(t.block == Blocks.powerNode){ firstNode = t; break; }
+        var graph = world.tile(ox + firstNode.x, oy + firstNode.y).build.power.graph;
+        for(Stile t : s.tiles){
+            if(t.block == Blocks.siliconSmelter){
+                assertSame(graph, world.tile(ox + t.x, oy + t.y).build.power.graph,
+                    "smelter must be wired into the array's power graph by the generated node links");
+            }
+        }
+        graph.add(psrc.build); // inject the external supply into that self-wired graph
+
         for(int i = 0; i < 1200; i++){
             Time.update();
-            pg.update();
+            graph.update();
             for(Tile t : world.tiles) if(t.build != null && t.isCenter()) t.build.update();
         }
 
-        // The layout must actually produce silicon and deliver it through its own belts to the exit.
+        // Powered (via the generated links) + flowing (via the generated belts) => silicon at the exit.
         int silicon = sink.build.items.get(Items.silicon);
         assertTrue(silicon > 0, "silicon should flow through the layout's belts into the sink; got " + silicon);
     }
