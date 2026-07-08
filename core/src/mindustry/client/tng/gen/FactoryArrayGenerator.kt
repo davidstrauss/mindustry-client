@@ -129,7 +129,10 @@ class FactoryArrayGenerator : SchematicGenerator {
 
         for (c in 0 until stage.count) {
             val sx = c * stride
-            tiles.add(Stile(crafter, sx, smelterY, null, ROT_UP))
+            // Stile x/y is the block's POSITION tile; its footprint spans [pos+sizeOffset ..]. Offset by
+            // -sizeOffset so the footprint's bottom-left lands at (sx, smelterY) as the layout intends
+            // (no-op for even 2x2 blocks; shifts odd 3x3 blocks like the surge smelter by +1).
+            tiles.add(Stile(crafter, sx - crafter.sizeOffset, smelterY - crafter.sizeOffset, null, ROT_UP))
             for (dx in 0 until s) tiles.add(Stile(Blocks.conveyor, sx + dx, yOff, null, ROT_UP))
             // Power node in the gap lane, with EXPLICIT relative links (a Point2[] config): to its own
             // smelter (bottom-left, offset -s) and to the next node (offset +stride). Explicit links work
@@ -140,6 +143,11 @@ class FactoryArrayGenerator : SchematicGenerator {
             if (c < stage.count - 1) links.add(Point2(stride, 0))     // -> next node in the row
             tiles.add(Stile(Blocks.powerNode, sx + s, smelterY, links.toTypedArray(), 0))
         }
+
+        // Output lane runs to the exit edge for the player (or a downstream stage) to collect.
+        // FINISHME: automatic inter-stage routing (riser from a feeder lane into the next stage's input
+        // taps) — attempted as a left-collect + up-riser, but the turn stalls throughput in the stacked-
+        // band geometry; needs a dedicated routing pass (verified via MakeSimTests' surge harness).
         for (x in 0 until usedW) tiles.add(Stile(outTier, x, laneY, null, ROT_RIGHT))
     }
 

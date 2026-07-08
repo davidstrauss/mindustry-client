@@ -147,12 +147,13 @@ public class FactoryArrayGeneratorTests{
         assertTrue(silicon >= 1, "silicon feeder stage placed (silicon is a crafted input)");
         assertEquals((int)Math.ceil(surge * 2.4 / 1.5), silicon, "silicon feeder sized to surge demand");
 
-        // whole chain fits the area, no overlaps between stages
+        // whole chain fits the area, no overlaps between stages (footprint = stile pos + sizeOffset)
         IntSet occ = new IntSet();
         for(Stile t : s.tiles){
-            assertTrue(t.x + t.block.size <= s.width && t.y + t.block.size <= s.height, "in bounds: " + t.block.name);
+            int fx = t.x + t.block.sizeOffset, fy = t.y + t.block.sizeOffset;
+            assertTrue(fx >= 0 && fy >= 0 && fx + t.block.size <= s.width && fy + t.block.size <= s.height, "in bounds: " + t.block.name);
             for(int dx = 0; dx < t.block.size; dx++) for(int dy = 0; dy < t.block.size; dy++)
-                assertTrue(occ.add(Point2.pack(t.x + dx, t.y + dy)), "stage overlap at " + (t.x+dx) + "," + (t.y+dy));
+                assertTrue(occ.add(Point2.pack(fx + dx, fy + dy)), "stage overlap at " + (fx+dx) + "," + (fy+dy));
         }
         assertTrue(s.width <= 24 && s.height <= 20, "chain fits the selected area");
     }
