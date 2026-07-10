@@ -76,12 +76,8 @@ Manifest & assets live in [`flatpak/`](flatpak/). The app icon is currently `cor
 
 ## Algorithmic build automation
 
-Scaffold lives in [`core/src/mindustry/client/tng/AutoBuild.kt`](core/src/mindustry/client/tng/AutoBuild.kt),
-wired into `mindustry.client.Client` (`initialize()` + `update()`).
-
-- Toggle in-game with the client command **`!tng on` / `!tng off` / `!tng`** (status).
-- Persisted under the setting key `tng-autobuild`.
-- Three modules — `MiningPlanner`, `ProcessingPlanner`, `DefensePlanner` — are currently **no-op
-  stubs**. They are meant to emit `BuildPlan`s into `player.unit().plans` (not place blocks directly),
-  reusing the existing `client/navigation/` machinery (`BuildPath`, `MinePath`, `Navigation.follow`,
-  `AStarNavigatorOptimised`). See the KDoc in `AutoBuild.kt` for the per-module TODOs.
+The active feature is the `!make` factory generator in `core/src/mindustry/client/tng/`
+(`gen/` + `make/`). The earlier miner tool (`AutoBuild.kt`, `!tng`/`!mine`) was removed;
+its F-drag area-select hook in `DesktopInput` now belongs to `MakeController`. The standalone
+`Interference.kt` contamination-avoidance library (with `InterferenceTests`) is kept for the
+upcoming belt-routing work.

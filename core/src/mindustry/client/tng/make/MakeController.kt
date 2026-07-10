@@ -119,7 +119,7 @@ object MakeController {
     /**
      * Plan (but do not place) the layout for the currently armed request over a drag rectangle:
      * normalize, generate, and position the schematic's plans at the captured bottom-left origin.
-     * Mirrors [mindustry.client.tng.MiningPlanner]'s planSelection -- pure (no threading, no queue
+     * Pure counterpart of [consumeSelection] (no threading, no queue
      * insertion, no state change beyond recording the area) so it is the headless-testable seam.
      * @return positioned build plans, or empty if unarmed / area too small / generation failed.
      */
