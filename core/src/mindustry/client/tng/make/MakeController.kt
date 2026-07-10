@@ -21,7 +21,7 @@ import kotlin.math.abs
  * release path), a schematic is generated off the render thread, and the result is handed to the
  * vanilla paste buffer — from which vanilla owns preview/move/rotate/confirm/cancel.
  *
- * Invariants honoured here (see RECON.md / the implementation guide):
+ * Invariants honoured here (see CLAUDE.md, "Invariants"):
  *  - The generator is [SchematicGenerator]-pure; we only *call* it, off-thread, and marshal the result
  *    back with [Core.app].post.
  *  - No live simulation: any predicted load surfaced later is the model's estimate, not a measurement.
