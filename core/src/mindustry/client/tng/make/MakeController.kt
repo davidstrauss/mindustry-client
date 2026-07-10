@@ -102,12 +102,11 @@ object MakeController {
             return true
         }
 
-        req.areaX = area.x; req.areaY = area.y; req.areaW = area.w; req.areaH = area.h
-        // coreSide auto-detect is Task F; leave whatever --core set (null = auto/none for now).
-
-        // Snapshot: the player may move the camera freely during generation; the layout anchors to the
-        // captured tiles, not the live cursor. Generation is pure/heavy -> off the render thread.
-        val snapshot = req
+        // Snapshot (a real copy): the daemon thread must not share the armed request, and the layout
+        // anchors to the captured tiles, not the live cursor. Generation is pure/heavy -> off the
+        // render thread. coreSide auto-detect is Task F; leave whatever --core set (null = auto/none).
+        val snapshot = req.copy()
+        snapshot.areaX = area.x; snapshot.areaY = area.y; snapshot.areaW = area.w; snapshot.areaH = area.h
         state = State.generating
         Threads.daemon("tng-make-gen") {
             val plans = computePlans(snapshot)
@@ -120,11 +119,12 @@ object MakeController {
      * Plan (but do not place) the layout for the currently armed request over a drag rectangle:
      * normalize, generate, and position the schematic's plans at the captured bottom-left origin.
      * Pure counterpart of [consumeSelection] (no threading, no queue
-     * insertion, no state change beyond recording the area) so it is the headless-testable seam.
+     * insertion, no state change — works on a copy of the armed request) so it is the
+     * headless-testable seam.
      * @return positioned build plans, or empty if unarmed / area too small / generation failed.
      */
     fun planSelection(x1: Int, y1: Int, x2: Int, y2: Int): Seq<BuildPlan> {
-        val req = pending ?: return Seq<BuildPlan>()
+        val req = pending?.copy() ?: return Seq<BuildPlan>()
         val area = normalizeArea(x1, y1, x2, y2)
         if (area.w < MIN_SIZE || area.h < MIN_SIZE) return Seq<BuildPlan>()
         req.areaX = area.x; req.areaY = area.y; req.areaW = area.w; req.areaH = area.h

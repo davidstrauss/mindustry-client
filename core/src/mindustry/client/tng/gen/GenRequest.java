@@ -34,4 +34,21 @@ public final class GenRequest{
 
     /** Determinism seed: same request + same seed must yield a byte-identical schematic. */
     public long seed;
+
+    /** Field-by-field copy, so callers can snapshot the armed request before mutating or handing it off-thread. */
+    public GenRequest copy(){
+        GenRequest r = new GenRequest();
+        r.target = target;
+        r.rate = rate;
+        r.areaX = areaX;
+        r.areaY = areaY;
+        r.areaW = areaW;
+        r.areaH = areaH;
+        r.coreSide = coreSide;
+        r.allowBridges = allowBridges;
+        r.conveyorTierCap = conveyorTierCap;
+        r.power = power;
+        r.seed = seed;
+        return r;
+    }
 }
