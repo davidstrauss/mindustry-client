@@ -120,7 +120,7 @@ public class FloorRenderer{
     }
 
     public void drawFloor(boolean processChanges, boolean cacheIgnoreWalls){
-        if(cache == null){
+        if(cache == null || cache.length == 0 || cache[0].length == 0){
             return;
         }
 
@@ -205,7 +205,7 @@ public class FloorRenderer{
     }
 
     public void drawLayer(CacheLayer layer, boolean checkChanges){
-        if(cache == null){
+        if(cache == null || cache.length == 0 || cache[0].length == 0){
             return;
         }
 
